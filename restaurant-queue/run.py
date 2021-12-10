@@ -1,3 +1,4 @@
+import sys
 from flask import Flask, request, json
 from ticketing import Ticketing
 from sqlite3 import Error
@@ -59,4 +60,4 @@ def queue():
         return get_response(None)
 
 if __name__ == '__main__':
-    app.run(port=8080)
+    app.run(port=int(sys.argv[1]))
