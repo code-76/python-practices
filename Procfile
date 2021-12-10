@@ -1,1 +1,1 @@
-worker: python restaurant-queue/run.py $PORT
+web: python restaurant-queue/run.py $PORT
