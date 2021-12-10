@@ -59,7 +59,7 @@ def queue():
     else: 
         return get_response(None)
 
-@app.route("setup")
+@app.route("/setup")
 def setup():
     setup = Setup()
     setup.init()
