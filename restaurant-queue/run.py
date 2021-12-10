@@ -62,7 +62,7 @@ def queue():
 @app.route("/setup")
 def setup():
     setup = Setup()
-    setup.init()
+    return setup.init()
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=sys.argv[1])
