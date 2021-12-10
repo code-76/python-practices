@@ -60,4 +60,4 @@ def queue():
         return get_response(None)
 
 if __name__ == '__main__':
-    app.run(port=int(sys.argv[1]))
+    app.run(port=sys.argv[1])
