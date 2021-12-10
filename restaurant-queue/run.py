@@ -1,7 +1,7 @@
 import sys
-from flask import Flask, request, json
+from setup import Setup
+from flask import Flask, request
 from ticketing import Ticketing
-from sqlite3 import Error
 
 app = Flask(__name__)
 ticketing = Ticketing()
@@ -58,6 +58,11 @@ def queue():
         return get_response(data[0])
     else: 
         return get_response(None)
+
+@app.route("setup")
+def setup():
+    setup = Setup()
+    setup.init()
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=sys.argv[1])
