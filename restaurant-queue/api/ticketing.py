@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify
 from database.ticketing import Ticketing
-from common.db import Database
 
 ticketing_bp = Blueprint('ticketing', __name__)
 
