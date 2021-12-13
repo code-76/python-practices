@@ -12,6 +12,14 @@ app.register_blueprint(queue_bp, url_prefix='/queue')
 def welcome():
     return "<b>Hello Welcome!</n>"
 
+@app.route("/ticketing")
+def ticketing():
+    return "<b>Welcome to Ticketing System.</b>"
+
+@app.route("/ordering")
+def ordering():
+    return "<b>Welcome to Ordering System.</b>"
+
 @app.route('/setup')
 def setup():
     database = Database()
