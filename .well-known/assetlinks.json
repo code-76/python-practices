@@ -1,0 +1,9 @@
+[{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.restaurantopening",
+      "sha256_cert_fingerprints":
+      ["FE:72:7F:3F:E5:CB:B8:63:9F:F5:6A:32:F3:4E:8C:BA:53:88:45:94:4F:B8:AC:CD:5C:2C:85:6A:2B:1B:0C:61"]
+    }
+  }]
