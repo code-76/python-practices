@@ -23,7 +23,7 @@ def queue_checking(queue_code):
             "result" : ticketing.queue_data(queue_code)
         }
 
-@queue_bp.route('/updateState/<int:member>')
+@queue_bp.route('/updateState/member/<int:member>')
 def queue_update(member):
     ticketing = Ticketing()
     if member > 0 and member <= 10:
