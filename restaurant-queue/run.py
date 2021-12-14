@@ -1,5 +1,6 @@
 from flask import Flask, config
 import config
+import os
 from api.ticketing import ticketing_bp
 from api.queue import queue_bp
 from common.db import Database
@@ -20,11 +21,16 @@ def ticketing():
 def ordering():
     return "<b>Welcome to Ordering System.</b>"
 
-@app.route('/setup')
+@app.route("/setup")
 def setup():
+    try:
+        os.remove(config.SQLALCHEMY_DATABASE)
+    except Exception as e:
+        pass
+
     database = Database()
     database.init()
-    return "Connection established!"
+    return "Good! The database have been initialized."
 
 if __name__ == '__main__':
     app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)

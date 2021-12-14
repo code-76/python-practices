@@ -28,7 +28,8 @@ class Database(object):
                     total_of_member integer NOT NULL DEFAULT 1,
                     ready integer NOT NULL DEFAULT 0,
                     code text NOT NULL DEFAULT 'A',
-                    queue_code text NOT NULL
+                    queue_code text NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
             """
         )
@@ -42,7 +43,8 @@ class Database(object):
                     id integer PRIMARY KEY AUTOINCREMENT,
                     code text NOT NULL DEFAULT 'A',
                     number integer NOT NULL DEFAULT 0,
-                    member integer NOT NULL DEFAULT 1
+                    member integer NOT NULL DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
             """
         )

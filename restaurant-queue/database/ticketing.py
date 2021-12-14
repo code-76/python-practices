@@ -48,7 +48,8 @@ class Ticketing:
         if len(data) > 0:
             result = {
                 "code" : data[0]['code'],
-                "number" : data[0]['number']
+                "number" : data[0]['number'],
+                "create_at" : data[0]['created_at']
             }
             
         return result
@@ -56,33 +57,66 @@ class Ticketing:
     def queue_data(self, queue_code):
         connect = self.__database.create_connection()
         connect.cursor()
+        current = None
+        
         data = connect.execute("""
-            SELECT * FROM ticketing WHERE queue_code = ? LIMIT 1
+            SELECT * FROM ticketing
+            WHERE queue_code = ? 
+            LIMIT 1
         """, [queue_code,]).fetchmany(1)
+
+        if len(data) == 1:
+            current = connect.execute("""
+                SELECT * FROM ticketing
+                WHERE ready = 1 AND queue_code != ?
+                ORDER BY created_at ASC LIMIT 1
+            """, [queue_code, ]).fetchmany(1)
 
         connect.commit()
         connect.close()
 
+        print(current)
+        print(data)
+
         if not data:
             return None
         else:
-            return {
-                "ready" : data[0]["ready"]
-            }
+            if not current:
+                return {
+                    "ready" : data[0]["ready"]
+                }
+            else:
+                return {
+                    "current" : {
+                        "code" : current[0]['code'],
+                        "number" : current[0]['number'],
+                        "created_at" : current[0]['created_at']
+                    },
+                    "ready" : data[0]["ready"]
+                }
 
     def queue_update(self, member):
         connect = self.__database.create_connection()
         connect.cursor()
 
         connect.execute("""
-            UPDATE ticketing SET ready = 1 WHERE ready = 0 AND total_of_member = ? ORDER BY id ASC LIMIT 1
+            UPDATE ticketing SET ready = 2 
+            WHERE ready = 1 AND total_of_member = ? 
+            LIMIT 1
+        """, [member, ])
+
+        connect.execute("""
+            UPDATE ticketing SET ready = 1 
+            WHERE ready = 0 AND total_of_member = ? 
+            ORDER BY id ASC LIMIT 1
         """, [member,])
 
         data = connect.execute("""
-            SELECT * FROM ticketing WHERE ready = 0 AND total_of_member = ? ORDER BY id ASC LIMIT 1
+            SELECT * FROM ticketing WHERE ready = 0 AND total_of_member = ? 
+            ORDER BY id ASC LIMIT 1
         """, [member,]).fetchmany(1)
 
-        if len(data) > 0:
+        if not data:
             connect.execute("""
                 UPDATE ticketing_types SET number = 0 WHERE member = ? LIMIT 1
             """, [member,])
