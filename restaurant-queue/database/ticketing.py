@@ -68,9 +68,9 @@ class Ticketing:
         if len(data) == 1:
             current = connect.execute("""
                 SELECT * FROM ticketing
-                WHERE ready = 1 AND queue_code != ?
+                WHERE ready = 1 AND queue_code != ? AND code = ?
                 ORDER BY created_at ASC LIMIT 1
-            """, [queue_code, ]).fetchmany(1)
+            """, [queue_code, data[0]['code']]).fetchmany(1)
 
         connect.commit()
         connect.close()
