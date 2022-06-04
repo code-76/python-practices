@@ -1,5 +1,5 @@
 import random
-from data.datasources import NumberDataSource
+from data.datasources_interface import NumberDataSource
 
 class NumberExtractor:
     def __init__(self, dataSource: NumberDataSource):

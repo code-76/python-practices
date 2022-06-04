@@ -11,7 +11,7 @@ class NumberHandler:
                     result += i
         return result
 
-    def toList(self, *args):
+    def to_list(self, *args):
         result = []
         for arg in args:
             for i in arg:
