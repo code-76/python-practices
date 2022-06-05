@@ -1,3 +1,5 @@
+from operator import mod
+from data.analytics_mode import NumberHitMode, NumberTraceMode
 from data.local.local_number_datasource import LocalNumberDataSource
 from data.remote.remote_number_datasource import RemoteNumberDataSource
 from utils.analytics import Analytics
@@ -30,12 +32,13 @@ if __name__ == '__main__':
     localDataSource.add([15,20,26,28,29,46,12])
     localDataSource.add([6,28,32,33,40,45,1])
     an = Analytics(localDataSource)
-    an.hit(1)
-    an.validation([2,8,22,35,40,43], [1,27,32,35,38,44,24])
-    an.validation([7,17,25,27,39,46], [1,27,32,35,38,44,24])
+    an.hit(mode=NumberHitMode.Default, previous=1)
+    an.hit(mode=NumberHitMode.VALIDATION, fromNum=[2,8,22,35,40,43], toNum=[1,27,32,35,38,44,24])
+    an.hit(mode=NumberHitMode.VALIDATION, fromNum=[7,17,25,27,39,46], toNum=[1,27,32,35,38,44,24])
+    an.hit(mode=NumberHitMode.ODD_AND_EVEN, previous=8, time=5, traceMode=NumberTraceMode.ODD_AND_EVEN)
     an.result()
 
     remoteDataSource.load(sd="20220501", ed="20220605")
     an2 = Analytics(remoteDataSource)
-    an2.hit(2)
+    an2.hit(previous=3)
     an2.result()

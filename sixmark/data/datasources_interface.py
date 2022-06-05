@@ -1,4 +1,4 @@
-from data.search_mode import NumberSearchMode
+from data.analytics_mode import NumberSearchMode
 
 class NumberDataSourcesInterface:
 

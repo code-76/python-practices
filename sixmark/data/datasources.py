@@ -1,6 +1,6 @@
 
 from data.datasources_interface import NumberDataSourcesInterface
-from data.search_mode import NumberSearchMode
+from data.analytics_mode import NumberSearchMode
 from utils.number import NumberHandler
 
 class NumberDataSourcesImpl(NumberDataSourcesInterface):
