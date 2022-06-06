@@ -1,9 +1,17 @@
 import random
-from data.datasources_interface import NumberDataSource
+import numpy as np
+from data.analytics_mode import NumberSearchMode, NumberTraceMode
+from data.extractor_mode import NumberExtractorMode
+from data.remote.remote_number_datasource import RemoteNumberDataSource
+from data.local.local_number_datasource import LocalNumberDataSource
 
 class NumberExtractor:
-    def __init__(self, dataSource: NumberDataSource):
+    def __init__(self, dataSource):
         self.numberDataSource = dataSource
+        if type(dataSource) is RemoteNumberDataSource:
+            self.numberDataSource.__class__ = RemoteNumberDataSource
+        elif type(dataSource) is LocalNumberDataSource:
+            self.numberDataSource.__class__ = LocalNumberDataSource
 
     def sample(self):
         num = []
@@ -11,105 +19,45 @@ class NumberExtractor:
             num.append(random.randint(1, 49))
         return num
 
-    def within(self, **kwargs):
-        to = kwargs.get("timeOfBack", None)
-        rangeOfList = kwargs.get("ranageOflist", range(1, 49))
-        outOfList = kwargs.get("outOfList", [])
-        num = []
-
-        if to is not None and to > 0:
-            rangeOfList = self.numberDataSource.getNumberSlots(to=to, merge=True)
-
-        while len(num) <= 6:
-            n = random.choice(rangeOfList)
-            if n not in num:
-                if len(outOfList) == 0:
-                    num.append(n)
-                elif n not in outOfList:
-                    num.append(n)
-        return num
+    def get_with_level(self, less=0, max=50, to=0, level=0, mode=NumberTraceMode.ODD):
+        slots = self.numberDataSource.search(mode=NumberSearchMode.SLOTS, to=to)
+        match mode:
+            case NumberTraceMode.ODD:
+                lists = [y for x in slots for y in x if y % 2 == 1 and y > less and y < max]
+            case NumberTraceMode.EVEN:
+                lists = [y for x in slots for y in x if y % 2 == 0 and y > less and y < max]
+            case _:
+                lists = [y for x in slots for y in x if y > less and y < max]
         
+        count_lists = self.distinct_count(lists)
+        soack = [x[0] for x in count_lists if x[1] >= level]
 
+        # print(slots)
+        # print("level {}".format(level))
+        # print("count {}".format(count_lists))
+        # print("soack {}".format(soack))
+        return soack
 
-# from itertools import count
-# from mimetypes import init
-# import random
+    def distinct(self, lists1, lists2):
+        return np.unique(lists1, lists2)
 
+    def distinct_count(self, lists):
+        unique, counts = np.unique(lists, return_counts=True)
+        return np.column_stack((unique, counts)).tolist()
 
-# class AnalyticsUtils:
-#     def __init__(self):
-#         self.myNumArr = []
-#         self.targetNumArr = []
+    def gen(self, withinList=[], divideList=[]):
+        lucky_num = []
+        while len(lucky_num) < 6:
+            pick = True
+            n = random.randint(1, 49)
+            if n in lucky_num: 
+                pick = False
+            if len(withinList) > 0 and n not in withinList:
+                pick = False
+            if len(divideList) > 0 and n in divideList:
+                pick = False
+            if pick:
+                lucky_num.append(n)
 
-#     def set_myNum(self, *args):
-#         self.myNumArr = self.__combine(args)
-
-#     def set_targetNum(self, *args):
-#         self.targetNumArr = self.__combine(args)
-
-#     def get_myNum(self):
-#         return self.myNumArr
-
-#     def add_myNum(self, *args):
-#         num = self.__combine(args)
-#         self.myNumArr.append(num)
-
-#     def get_targetNum(self):
-#         return self.targetNumArr
-
-#     def add_targetNum(self, *args):
-#         num = self.__combine(args)
-#         self.targetNumArr.append(num)
-
-#     def __combine(self, *args):
-#         result = []
-#         for arg in args:
-#             for i in arg:
-#                 if type(i) is int:
-#                     result.append(i)
-#                 elif type(i) is list:
-#                     result += i
-#         return result
-
-#     def mulitple_match(self, num):
-#         count = 0
-#         hit = []
-#         for j in num:
-#             if j in self.targetNumArr: 
-#                 hit.append(j)
-#                 count += 1
-#         print("Match number: {}, total: {}".format(hit, count))
-
-#     def vaildation(self):
-#         for num in self.myNumArr:
-#             if (type(num) is list):
-#                self.mulitple_match(num)
-
-#     def unique(self, list1):
-#         x = np.array(list1)
-#         return np.unique(x)
-
-#     def show_all_result(self):
-#         print(self.unique(self.targetNumArr))
-
-#     def eliminate_match(self):
-#         num = []
-#         i = 0
-#         while i < 6:
-#             n = random.randint(1, 49)
-#             if n not in self.targetNumArr and n not in num:
-#                 num.append(n)
-#                 i += 1
-#         print("Luck number: {}".format(num))
-
-#     def within_match(self):
-#         num = []
-#         numOfScope = self.unique(self.targetNumArr)
-#         i = 0
-#         while i < 6:
-#             n = random.randint(1, 49)
-#             if n in numOfScope and n not in num:
-#                 num.append(n)
-#                 i += 1
-#         print("Lucky number: {}".format(num))
- 
+        print("Lucky number: {}".format(lucky_num))
+        return lucky_num

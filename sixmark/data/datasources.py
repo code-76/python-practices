@@ -26,13 +26,13 @@ class NumberDataSourcesImpl(NumberDataSourcesInterface):
     def search(self, mode=NumberSearchMode.LIST, skip=None, to=None, mergeEnable=False):
         match mode: 
             case NumberSearchMode.LIST: 
-                return self.__search_list(skip, to)
+                return self._search_list(skip, to)
             case NumberSearchMode.SLOTS:
-                return self.__search_slots(skip, to, mergeEnable)
+                return self._search_slots(skip, to, mergeEnable)
             case _: 
                 return []       
 
-    def __search_slots(self, skip=None, to=None, mergeEnable=False):
+    def _search_slots(self, skip=None, to=None, mergeEnable=False):
         if skip is None and to is None:
             if mergeEnable:
                 return self.number_handler.to_list(self.number_slots)
@@ -50,7 +50,7 @@ class NumberDataSourcesImpl(NumberDataSourcesInterface):
             else:
                 return result
 
-    def __search_list(self, skip=None, to=None):
+    def _search_list(self, skip=None, to=None):
         if skip is None and to is None:
             return self.number_list
         else:

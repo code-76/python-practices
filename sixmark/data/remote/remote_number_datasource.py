@@ -16,4 +16,4 @@ class RemoteNumberDataSource(NumberDataSourcesImpl):
         if response.status_code == 200:
             response_json = json.loads(response.text)
             for data in response_json:
-                self.add(data["no"].split("+"))
+                self.add(list(map(int, data["no"].split("+"))))

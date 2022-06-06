@@ -1,14 +1,29 @@
+from heapq import merge
 from operator import mod
-from data.analytics_mode import NumberHitMode, NumberTraceMode
+from time import time
+from traceback import format_tb
+
+from numpy import array, extract
+from data.analytics_mode import NumberHitMode, NumberSearchMode, NumberTraceMode
+from data.extractor_mode import NumberExtractorMode
 from data.local.local_number_datasource import LocalNumberDataSource
 from data.remote.remote_number_datasource import RemoteNumberDataSource
 from utils.analytics import Analytics
+from utils.extractor import NumberExtractor
 from utils.hkjc import HKJCRequest
 
-localDataSource = LocalNumberDataSource()
-remoteDataSource = RemoteNumberDataSource()
 
-if __name__ == '__main__':
+def testRemoteDataSourcces():
+    remoteDataSource = RemoteNumberDataSource()
+    remoteDataSource.load(sd="20220401", ed="20220605")
+    lists = remoteDataSource.search(mode=NumberSearchMode.SLOTS, to=3, mergeEnable=True)
+    print(lists)
+    an2 = Analytics(remoteDataSource)
+    an2.hit(previous=3, time=20)
+    an2.result()
+
+def testLocalDataSources():
+    localDataSource = LocalNumberDataSource()
     localDataSource.add([1,27,2,35,38,44,24])
     localDataSource.add([2,13,35,39,43,48,9])
     localDataSource.add([1,17,25,29,42,46,8])
@@ -38,7 +53,50 @@ if __name__ == '__main__':
     an.hit(mode=NumberHitMode.ODD_AND_EVEN, previous=8, time=5, traceMode=NumberTraceMode.ODD_AND_EVEN)
     an.result()
 
-    remoteDataSource.load(sd="20220501", ed="20220605")
-    an2 = Analytics(remoteDataSource)
-    an2.hit(previous=3)
-    an2.result()
+def testLocalExtractor():
+    localDataSource = LocalNumberDataSource()
+    localDataSource.add([1,27,2,35,38,12,24])
+    localDataSource.add([2,35,35,12,43,48,9])
+    extractor = NumberExtractor(localDataSource)
+    extractor.get_with_level(to=2, max=20, level=2, mode=NumberTraceMode.EVEN)
+
+def testRemoteExtractor():
+    remoteDataSource = RemoteNumberDataSource()
+    remoteDataSource.load(sd="20220301", ed="20220605")
+    extractor = NumberExtractor(remoteDataSource)
+    extractor.get_with_level(to=10, max=50, level=2, mode=NumberTraceMode.ODD_AND_EVEN)
+
+def testDivideExtractor():
+    remoteDataSource = RemoteNumberDataSource()
+    remoteDataSource.load(sd="20220301", ed="20220605")
+    divideLists = remoteDataSource.search(mode=NumberSearchMode.SLOTS, skip=2, to=3, mergeEnable=True)
+    extractor = NumberExtractor(remoteDataSource)
+    oddLists = extractor.get_with_level(to=10, level=2, mode=NumberTraceMode.ODD)
+    evenLists = extractor.get_with_level(to=10, level=2, mode=NumberTraceMode.EVEN)
+    withinLists = oddLists + evenLists
+    # withinLists = extractor.get_with_level(to=10, level=2, mode=NumberTraceMode.ODD_AND_EVEN)
+
+    withinLists = [x for x in withinLists if x not in divideLists]
+    print("Divide {}".format(divideLists))
+    print("Within {}".format(withinLists))
+
+    an = Analytics(remoteDataSource)
+    lucky_num = extractor.gen(withinList=withinLists, divideList=divideLists)
+    an.hit(mode=NumberHitMode.VALIDATION, fromNum=lucky_num, toNum=[2,13,35,39,43,48,9])
+    an.result()
+    
+def testRange(odd, even):
+    return "{}:{}".format(odd, even)
+
+def test():
+    a = [x for x in range(1,10) if x % 2 == 0]
+    b = [testRange(x, y) for x in range(1,4) for y in range(1,8) if x % 2 > 0]
+    print("{}, {}".format(a, b))
+
+if __name__ == '__main__':
+    testDivideExtractor()
+    # testRemoteExtractor()
+    # testLocalExtractor()
+    # test()
+    # testLocalDataSources()
+    # testRemoteDataSourcces()
