@@ -53,10 +53,11 @@ class NumberExtractor:
 
         return False
 
-    def gen(self, withinList=[], divideList=[], singleTime=0, doubleTime=0, oddTime=0, evenTime=0, excludeTime=0):
+    def gen(self, followList=[], withinList=[], divideList=[], singleTime=0, doubleTime=0, oddTime=0, evenTime=0, excludeTime=0):
         lucky_num = []
         while len(lucky_num) < 6:
-            n = random.randint(1, 49)
+            n = random.randint(1, 49) if len(followList) == 0 else random.choices(followList)[0]
+            # print("\gen: {}".format(n))
             if n not in lucky_num:
                 if self._is_within_range(n, withinList) == False:
                     continue

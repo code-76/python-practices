@@ -32,11 +32,11 @@ def luckyNumber(dataSource):
     an = Analytics(dataSource)
     an.log_enable(True)
     collectByType = an.recollect()
-    collectByNumbers = an.recollect(mode=NumberAnalytcsMode.RANGE, scope=15, level=2)
+    collectByNumbers = an.recollect(mode=NumberAnalytcsMode.RANGE, scope=20, level=2)
     result = extractor.gen(
-        doubleTime=collectByType["double"],
-        withinList=collectByNumbers["odd"] + collectByNumbers["even"],
-        excludeTime=3
+        followList=collectByNumbers["odd"] + collectByNumbers["even"],
+        singleTime=collectByType["single"],
+        oddTime=collectByType["odd"]
     )
     print("Lucky number: {}".format(result))
 
