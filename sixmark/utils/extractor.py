@@ -1,17 +1,12 @@
 import random
-import numpy as np
-from data.analytics_mode import NumberSearchMode, NumberTraceMode
-from data.extractor_mode import NumberExtractorMode
+from data.analytics_mode import NumberSearchMode
 from data.remote.remote_number_datasource import RemoteNumberDataSource
 from data.local.local_number_datasource import LocalNumberDataSource
 
 class NumberExtractor:
     def __init__(self, dataSource):
-        self.numberDataSource = dataSource
-        if type(dataSource) is RemoteNumberDataSource:
-            self.numberDataSource.__class__ = RemoteNumberDataSource
-        elif type(dataSource) is LocalNumberDataSource:
-            self.numberDataSource.__class__ = LocalNumberDataSource
+        self.dataSource = dataSource
+        self.dataSource.__class__ = LocalNumberDataSource if type(dataSource) is LocalNumberDataSource else RemoteNumberDataSource
 
     def sample(self):
         num = []
@@ -19,45 +14,73 @@ class NumberExtractor:
             num.append(random.randint(1, 49))
         return num
 
-    def get_with_level(self, less=0, max=50, to=0, level=0, mode=NumberTraceMode.ODD):
-        slots = self.numberDataSource.search(mode=NumberSearchMode.SLOTS, to=to)
-        match mode:
-            case NumberTraceMode.ODD:
-                lists = [y for x in slots for y in x if y % 2 == 1 and y > less and y < max]
-            case NumberTraceMode.EVEN:
-                lists = [y for x in slots for y in x if y % 2 == 0 and y > less and y < max]
-            case _:
-                lists = [y for x in slots for y in x if y > less and y < max]
-        
-        count_lists = self.distinct_count(lists)
-        soack = [x[0] for x in count_lists if x[1] >= level]
+    def _range_count(self, luckyNum, by, to):
+        count = 0
+        for num in luckyNum:
+            if num in range(by, to):
+                count += 1
+        return count
 
-        # print(slots)
-        # print("level {}".format(level))
-        # print("count {}".format(count_lists))
-        # print("soack {}".format(soack))
-        return soack
+    def _is_within_range(self, num, withinList):
+        return num in withinList or len(withinList) == 0
 
-    def distinct(self, lists1, lists2):
-        return np.unique(lists1, lists2)
+    def _is_divide_range(self, num, divideList):
+        return num not in divideList or len(divideList) == 0
 
-    def distinct_count(self, lists):
-        unique, counts = np.unique(lists, return_counts=True)
-        return np.column_stack((unique, counts)).tolist()
+    def _odd_count(self, luckyNum):
+        count = 0
+        for num in luckyNum:
+            if num % 2 == 1:
+                count += 1
+        return count
 
-    def gen(self, withinList=[], divideList=[]):
+    def _even_count(self, luckyNum):
+        count = 0
+        for num in luckyNum:
+            if num % 2 == 0:
+                count += 1
+        return count
+
+    def is_same(self, luckyNum, time=0):
+        slots = self.dataSource.search(mode=NumberSearchMode.SLOTS, size=50)
+        for slot in slots:
+            count = 0   
+            for num in slot:
+                if num in luckyNum:
+                    count += 1
+                if time == count:
+                    return True
+
+        return False
+
+    def gen(self, withinList=[], divideList=[], singleTime=0, doubleTime=0, oddTime=0, evenTime=0, excludeTime=0):
         lucky_num = []
         while len(lucky_num) < 6:
-            pick = True
             n = random.randint(1, 49)
-            if n in lucky_num: 
-                pick = False
-            if len(withinList) > 0 and n not in withinList:
-                pick = False
-            if len(divideList) > 0 and n in divideList:
-                pick = False
-            if pick:
+            if n not in lucky_num:
+                if self._is_within_range(n, withinList) == False:
+                    continue
+                if self._is_divide_range(n, divideList) == False:
+                    continue
+
                 lucky_num.append(n)
 
-        print("Lucky number: {}".format(lucky_num))
+                if len(lucky_num) == 6:
+                    if excludeTime > 0 and self.is_same(lucky_num, excludeTime):
+                        # print("Reset by same number")
+                        lucky_num = []
+                    elif singleTime > 0 and self._range_count(lucky_num, by=1, to=9) != singleTime:
+                        # print("Reset by single count")
+                        lucky_num = []
+                    elif doubleTime > 0 and self._range_count(lucky_num, by=10, to=49) != doubleTime:
+                        # print("Reset by double count")
+                        lucky_num = []
+                    elif oddTime > 0 and self._odd_count(lucky_num) != oddTime:
+                        # print("Reset by odd count")
+                        lucky_num = []
+                    elif evenTime > 0 and self._even_count(lucky_num) != evenTime:
+                        # print("Reset by even count")
+                        lucky_num = []
+                    
+        # print("Lucky number: {}".format(lucky_num))
         return lucky_num

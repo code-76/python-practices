@@ -17,7 +17,7 @@ class NumberDataSourcesInterface:
     def get_slots(self) -> tuple:
         pass
 
-    def search(self, mode=NumberSearchMode.LIST, skip=None, to=None, mergeEnable=False):
+    def search(self, mode=NumberSearchMode.LIST, skip=None, size=None, mergeEnable=False):
         pass
 
     def add_log(self, **kwargs):

@@ -1,6 +1,5 @@
-from time import time
 import unittest
-from data.analytics_mode import NumberHitMode, NumberTraceMode
+from data.analytics_mode import NumberAnalytcsMode
 from data.local.local_number_datasource import LocalNumberDataSource
 from utils.analytics import Analytics
 
@@ -8,39 +7,37 @@ class TestAnalytics(unittest.TestCase):
 
     def setUp(self):
         self.list = [1,2,3,4,5]
-        self.list2 = [6,7,8,1,10]
+        self.list2 = [6,2,8,1,10]
         self.list3 = [11,2,3,14,15]
         self.list4 = [16,17,18,19,20]
-        self.list5 = [21,22,23,24,25]
-        self.dataSources = LocalNumberDataSource()
-        self.dataSources.add(self.list)
-        self.dataSources.add(self.list2)
-        self.dataSources.add(self.list3)
-        self.dataSources.add(self.list4)
-        self.dataSources.add(self.list5)
-        self.analytics = Analytics(self.dataSources)
+        self.list5 = [21,2,16,24,25]
+        self.dataSource = LocalNumberDataSource()
+        self.dataSource.add(self.list)
+        self.dataSource.add(self.list2)
+        self.dataSource.add(self.list3)
+        self.dataSource.add(self.list4)
+        self.dataSource.add(self.list5)
+        self.analytics = Analytics(self.dataSource)
 
     def tearDown(self):
-        self.dataSources.clear()
-
-    def test_sample_slots(self):
-        result = "Number of slots: {}".format([self.list, self.list2, self.list3, self.list4, self.list5])
-        self.assertEqual(result, self.analytics.log_msg)
+        self.dataSource.clear()
 
     def test_validation(self):
-        self.analytics.log_msg = ""
-        result = "\nHit: {}, Number: {}".format(3, [2, 3, 4])
-        self.analytics.hit(mode=NumberHitMode.VALIDATION, fromNum=[1,2,3,4,5], toNum=[2,3,4,6,9,7])
-        self.assertEqual(result, self.analytics.log_msg)
+        result = self.analytics.validation(fromNum=[1,2,3,4,5], toNum=[2,3,4,6,9,7])
+        self.assertEqual(result, {'hits': 3, 'numbers': [2, 3, 4]})
 
-    def test_trace_back_hit(self):
-        self.analytics.log_msg = ""
-        result = "\nTrace Back Hit {}".format([3, 0, 0, 0])
-        self.analytics.hit(previous=2)
-        self.assertEqual(result, self.analytics.log_msg)
+    def test_collect_number(self):
+        result = self.analytics.recollect(mode=NumberAnalytcsMode.RANGE, scope=1)
+        resultWithLevel = self.analytics.recollect(mode=NumberAnalytcsMode.RANGE, scope=2, level=2)
+        self.assertEqual(result, {'odd': [1, 3, 5], 'even': [2, 4]})
+        self.assertEqual(resultWithLevel, {'odd': [1], 'even': [2]})
 
-    def test_trace_back_odd_and_even(self):
-        self.analytics.log_msg = ""
-        result = "\nTrace Back Hit {}".format("['[odd([1]), even([])]']")
-        self.analytics.hit(mode=NumberHitMode.ODD_AND_EVEN, traceMode=NumberTraceMode.ODD_AND_EVEN, previous=1, time=1)
-        self.assertEqual(result, self.analytics.log_msg)
+    def test_trace(self):
+        result = self.analytics.recollect(mode=NumberAnalytcsMode.TRACE, time=2, scope=1)
+        self.assertEqual(result, {'hit_numbers': [[1, 2], []]})
+
+    def test_recollect(self):
+        resultAvg = self.analytics.recollect()
+        resultMax = self.analytics.recollect(avg=False)
+        self.assertEqual(resultAvg, {'odd': 2, 'even': 3, 'single': 2, 'double': 3})
+        self.assertEqual(resultMax, {'odd': 3, 'even': 4, 'single': 5, 'double': 5})
