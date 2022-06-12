@@ -46,9 +46,9 @@ class Analytics:
             case NumberAnalytcsMode.RANGE:
                 return self._collect_number_by(
                     scope=kwargs.get("scope", 1),
-                    time=kwargs.get("time", 1),
                     level=kwargs.get("level", 0),
-                    range=kwargs.get("range", None)
+                    by=kwargs.get("by", 0),
+                    to=kwargs.get("to", 0)
                 )
             case _:
                 return {}
@@ -66,7 +66,7 @@ class Analytics:
     def _hit_number(self, fromNum, toNum):
         result = []
         for i in fromNum:
-            if i in toNum:
+            if i in toNum and i not in result:
                 result.append(i)
         return result
       
@@ -78,7 +78,7 @@ class Analytics:
             result = result + self._hit_number(slotBy, slot)
 
         # self._log("\n_trace_hit_one_by_one: {}".format(result))
-        return result
+        return self._distinct_count(result)
 
     def _collect_trace(self, by = 0, scope = 0, skip = 0, time=0):
         collect = {}; hitNumbers = []
@@ -98,10 +98,10 @@ class Analytics:
         self._log("\n_collect_trace collect: {}".format(collect))
         return collect
   
-    def _in_range(self, slot, range):
+    def _in_range(self, slot, by, to):
         result = []
         for num in slot:
-            if num in range:
+            if num in range(by, to):
                 result.append(num)
         return result
 
@@ -117,30 +117,28 @@ class Analytics:
         # self._log("\nin_number_type: {}".format(collect))
         return collect
 
-    def _collect_number_by(self, scope=0, time=0, level=0, range=None):
+    def _collect_number_by(self, scope=0, level=0, by=0, to=0):
         collect = {}; odd = []; even = []; inRange = []
-        while time > 0:
-            slots = self.dataSource.search(mode=NumberSearchMode.SLOTS, size=scope)
-            if slots is None or len(slots) <= 0:
-                break
+        slots = self.dataSource.search(mode=NumberSearchMode.SLOTS, size=scope)
+        if slots is None or len(slots) <= 0:
+            return {}
 
-            # self._log("\n_collect_number_by slots: {}".format(slots))
-            
-            for slot in slots:
-                # if range is not None:
-                #     inRange = inRange + self._in_range(slot, range)
-                numbers = self._in_number_type(slot)
-                odd = odd + numbers["odd"]
-                even = even + numbers["even"]
-            time -= 1
+        # self._log("\n_collect_number_by slots: {}".format(slots))
+        
+        for slot in slots:
+            inRange = inRange + self._in_range(slot, by, to)
+            numbers = self._in_number_type(slot)
+            odd = odd + numbers["odd"]
+            even = even + numbers["even"]
 
         if level > 0:
             oddWithLevel = [x[0] for x in self._distinct_count(odd) if x[1] >= level]
             evenWithLevel = [x[0] for x in self._distinct_count(even) if x[1] >= level]
-            collect.update({"odd": oddWithLevel, "even": evenWithLevel})
+            inRangeWithLevel = [x[0] for x in self._distinct_count(inRange) if x[1] >= level]
+            collect.update({"odd": oddWithLevel, "even": evenWithLevel, "in_range": inRangeWithLevel})
             self._log("\n_collect_number_by with level: {}".format(collect))
         else:
-            collect.update({"odd": odd, "even": even})
+            collect.update({"odd": odd, "even": even, "in_range": inRange})
             self._log("\n_collect_number_by: {}".format(collect))
         return collect
 

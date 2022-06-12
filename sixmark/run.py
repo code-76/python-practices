@@ -31,12 +31,16 @@ def luckyNumber(dataSource):
     extractor = NumberExtractor(dataSource)
     an = Analytics(dataSource)
     an.log_enable(True)
+    an.recollect(mode=NumberAnalytcsMode.TRACE, time=5, scope=5)
     collectByType = an.recollect()
-    collectByNumbers = an.recollect(mode=NumberAnalytcsMode.RANGE, scope=15, level=2)
+    collectByNumbers = an.recollect(mode=NumberAnalytcsMode.RANGE, scope=10, level=2, by=1, to=10)
     followList = collectByNumbers["odd"] + collectByNumbers["even"]
     divideList = dataSource.search(mode=NumberSearchMode.SLOTS, size=1, mergeEnable=True)
+    followList.sort()
+    divideList.sort()
     print("\nPrevious List: {}".format(divideList))
     print("\nFollow List: {}".format(followList))
+    validation(dataSource, shot=followList)
     result = extractor.gen(
         followList=followList,
         divideList=divideList,
@@ -45,11 +49,10 @@ def luckyNumber(dataSource):
     )
     print("Lucky number: {}".format(result))
 
-def validation(dataSource):
-    myNum = [45, 17, 23, 5, 33, 39]
+def validation(dataSource, shot=[]):
     latestSlot = dataSource.search(mode=NumberSearchMode.SLOTS, size=1, mergeEnable=True)
     an = Analytics(dataSource)
-    print("Today: {} Result: {}".format(latestSlot, an.validation(latestSlot, myNum)))
+    print("Today: {} Result: {}".format(latestSlot, an.validation(latestSlot, shot)))
 
 if __name__ == '__main__':
     # loadMockDataSource(localDataSource)
@@ -58,4 +61,4 @@ if __name__ == '__main__':
     # remoteDataSource.log()
     # testAvg(remoteDataSource)
     luckyNumber(remoteDataSource)
-    # validation(remoteDataSource)
+    # validation(remoteDataSource, shot=[11, 17, 24, 26, 37, 41])

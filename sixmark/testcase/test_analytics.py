@@ -29,12 +29,12 @@ class TestAnalytics(unittest.TestCase):
     def test_collect_number(self):
         result = self.analytics.recollect(mode=NumberAnalytcsMode.RANGE, scope=1)
         resultWithLevel = self.analytics.recollect(mode=NumberAnalytcsMode.RANGE, scope=2, level=2)
-        self.assertEqual(result, {'odd': [1, 3, 5], 'even': [2, 4]})
-        self.assertEqual(resultWithLevel, {'odd': [1], 'even': [2]})
+        self.assertEqual(result, {'odd': [1, 3, 5], 'even': [2, 4], 'in_range': []})
+        self.assertEqual(resultWithLevel, {'odd': [1], 'even': [2], 'in_range': []})
 
     def test_trace(self):
         result = self.analytics.recollect(mode=NumberAnalytcsMode.TRACE, time=2, scope=1)
-        self.assertEqual(result, {'hit_numbers': [[1, 2], []]})
+        self.assertEqual(result, {'hit_numbers': [[[1, 1], [2, 1]], []]})
 
     def test_recollect(self):
         resultAvg = self.analytics.recollect()
