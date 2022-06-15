@@ -5,6 +5,7 @@ class NumberSearchMode(Enum):
     SLOTS = 2
 
 class NumberAnalyticsMode(Enum):
-    TYPE = 1
-    TRACE = 2
-    RANGE = 3
+    HIT = 1
+    TYPE = 2
+    TRACE = 3
+    RANGE = 4

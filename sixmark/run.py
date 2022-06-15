@@ -6,14 +6,6 @@ from data.remote.remote_number_datasource import RemoteNumberDataSource
 from utils.analytics import Analytics
 from utils.extractor import NumberExtractor
 
-localDataSource = LocalNumberDataSource()
-remoteDataSource = RemoteNumberDataSource()
-mockLocalNumberDataSource = LocalNumberDataSource()
-
-def analytics(dataSource):
-    an = Analytics(dataSource)
-    an.result()
-
 def load_mock_datasource(dataSource):
     dataSource.add([1,27,2,35,38,44,24])
     dataSource.add([2,13,35,2,43,48,9])
@@ -46,19 +38,24 @@ def lucky_number(dataSource):
 def first_one_conbination(dataSource):
     an = Analytics(dataSource)
     an.log_level(DebugLogLevel.NONE)
-    numTypes = an.recollect()
+    numTypes = an.recollect(scope=5, level=2)
     latestNumbers = dataSource.search(mode=NumberSearchMode.SLOTS, size=1, mergeEnable=True)
     slotsPastNumbers = dataSource.search(mode=NumberSearchMode.SLOTS, size=2, mergeEnable=True)
     trace = an.recollect(mode=NumberAnalyticsMode.TRACE, time=20, scope=1)
-    hitWithLevel3 = an.recollect(mode=NumberAnalyticsMode.RANGE, scope=20, level=3)
-    # # odd = hitWithLevel3["odd"]
-    # # even = hitWithLevel3["even"]
-    # an.log()
-    # odd, even = an.odd_even_count(slot=latestNumbers)
-    # single = an.in_range_count(slot=latestNumbers, by=1, to=10)
+    range10WithLevel = an.recollect(mode=NumberAnalyticsMode.RANGE, scope=20, level=3, by=1, to=10)
+    range20WithLevel = an.recollect(mode=NumberAnalyticsMode.RANGE, scope=20, level=3, by=10, to=19)
+    range30WithLevel = an.recollect(mode=NumberAnalyticsMode.RANGE, scope=20, level=3, by=20, to=29)
+    range40WithLevel = an.recollect(mode=NumberAnalyticsMode.RANGE, scope=20, level=3, by=30, to=39)
+    range49WithLevel = an.recollect(mode=NumberAnalyticsMode.RANGE, scope=20, level=3, by=40, to=49)
+    hitWithLevel = an.recollect(mode=NumberAnalyticsMode.HIT, scope=20, level=3)
     print("Latest numbers: {}".format(latestNumbers))
-    # print("Slots: {}, odd: {}, even: {}, single: {}".format(slotsPastNumbers, odd, even, single))
     print("Number Types: {}".format(numTypes))
+    print("Number Hits: {}".format(hitWithLevel))
+    print("Range Numbers 1-10: {}".format(range10WithLevel))
+    print("Range Numbers 10-29: {}".format(range20WithLevel))
+    print("Range Numbers 20-29: {}".format(range30WithLevel))
+    print("Range Numbers 30-39: {}".format(range40WithLevel))
+    print("Range Numbers 40-49: {}".format(range49WithLevel))
     an.log()
     for index, hit in enumerate(trace["numbers"]):
         print("{} : {}".format(index, hit))
@@ -77,9 +74,13 @@ def validation_all(dataSource, skip=0, time=0, shot=[]):
         time -= 1
 
 if __name__ == '__main__':
+    localDataSource = LocalNumberDataSource()
+    remoteDataSource = RemoteNumberDataSource()
+    remoteDataSource.load(sd="20220401", ed="20220614")
+    mockLocalNumberDataSource = LocalNumberDataSource()
     # load_mock_datasource(localDataSource)
     # localDataSource.log()
-    remoteDataSource.load(sd="20220401", ed="20220614")
-    first_one_conbination(remoteDataSource)
     # remoteDataSource.log()
+
+    first_one_conbination(remoteDataSource)
     # validation(remoteDataSource, shot=[11, 17, 24, 26, 37, 41])

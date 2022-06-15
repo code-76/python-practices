@@ -55,4 +55,4 @@ class NumberDataSourcesImpl(NumberDataSourcesInterface):
         self.number_list = []
 
     def log(self):
-        print("\n{}".format(self.number_list))
+        print("\nDataSource : {}".format(self.number_slots))

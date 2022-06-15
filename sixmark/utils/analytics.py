@@ -13,14 +13,14 @@ class Analytics:
     def log_level(self, level):
         self.debugLogger.log_level(level)
 
-    def in_range_count(self, slot, by=0, to=0):
+    def _in_range_count(self, slot, by=0, to=0):
         count = 0
         for num in slot:
             if num in range(by, to):
                 count += 1
         return count
 
-    def odd_even_count(self, slot):
+    def _odd_even_count(self, slot):
         odd = 0; even = 0
         for num in slot:
             if num % 2 == 0:
@@ -32,20 +32,25 @@ class Analytics:
     def recollect(self, **kwargs):
         match kwargs.get("mode", NumberAnalyticsMode.TYPE):
             case NumberAnalyticsMode.TYPE:
-                return self._collect_number_type(
-                    skip=kwargs.get("skip", 0), 
-                    size=kwargs.get("size", len(self.dataSource.get_slots()) - 1), 
-                    avg=kwargs.get("avg", True)
+                return self._collect_number_types(
+                    scope=kwargs.get("scope", len(self.dataSource.get_slots()) - 1),
+                    level=kwargs.get("level", 0)
                 )
             case NumberAnalyticsMode.TRACE:
-                return self._collect_trace(
+                return self._collect_traces(
                     by=kwargs.get("by", 0),
                     scope=kwargs.get("scope", 2),
                     skip=kwargs.get("skip", 1),
                     time=kwargs.get("time", 1)
                 )
+            case NumberAnalyticsMode.HIT:
+                return self._collect_number_hits(
+                    skip=kwargs.get("skip", 0),
+                    scope=kwargs.get("scope", 1),
+                    avg=kwargs.get("avg", True),
+                )   
             case NumberAnalyticsMode.RANGE:
-                return self._collect_number_by(
+                return self._collect_number_ranges(
                     scope=kwargs.get("scope", 1),
                     level=kwargs.get("level", 0),
                     by=kwargs.get("by", 0),
@@ -81,7 +86,7 @@ class Analytics:
         self._log("debug", "_trace_hit_one_by_one: {}".format(result))
         return self._distinct_count(result)
 
-    def _collect_trace(self, by = 0, scope = 0, skip = 0, time=0):
+    def _collect_traces(self, by = 0, scope = 0, skip = 0, time=0):
         collect = {}; hitNumbers = []
         scope = scope + 1 if by <= 0 else by
         skip = skip - 1 if by <= 0 else by
@@ -118,7 +123,27 @@ class Analytics:
         self._log("debug", "_in_number_type: {}".format(collect))
         return collect
 
-    def _collect_number_by(self, scope=0, level=0, by=0, to=0):
+    def _collect_number_ranges(self, scope=0, level=0, by=0, to=0):
+        collect = {}; inRange = []
+        slots = self.dataSource.search(mode=NumberSearchMode.SLOTS, size=scope)
+        if slots is None or len(slots) <= 0:
+            return {}
+            
+        self._log("debug", "_collect_number_by slots: {}".format(slots))
+        
+        for slot in slots:
+            inRange = inRange + self._in_range(slot, by, to)
+
+        if level > 0:
+            inRangeWithLevel = [x[0] for x in self._distinct_count(inRange) if x[1] >= level]
+            collect.update({"in_range": inRangeWithLevel})
+        else:
+            collect.update({"in_range": inRange})
+
+        self._log("info", "_collect_number_ranges: {}".format(collect))
+        return collect
+
+    def _collect_number_types(self, scope=0, level=0):
         collect = {}; odd = []; even = []; inRange = []
         slots = self.dataSource.search(mode=NumberSearchMode.SLOTS, size=scope)
         if slots is None or len(slots) <= 0:
@@ -127,7 +152,6 @@ class Analytics:
         self._log("debug", "_collect_number_by slots: {}".format(slots))
         
         for slot in slots:
-            inRange = inRange + self._in_range(slot, by, to)
             numbers = self._in_number_type(slot)
             odd = odd + numbers["odd"]
             even = even + numbers["even"]
@@ -135,29 +159,28 @@ class Analytics:
         if level > 0:
             oddWithLevel = [x[0] for x in self._distinct_count(odd) if x[1] >= level]
             evenWithLevel = [x[0] for x in self._distinct_count(even) if x[1] >= level]
-            inRangeWithLevel = [x[0] for x in self._distinct_count(inRange) if x[1] >= level]
-            collect.update({"odd": oddWithLevel, "even": evenWithLevel, "in_range": inRangeWithLevel})
-            self._log("info", "_collect_number_by with level: {}".format(collect))
+            collect.update({"odd": oddWithLevel, "even": evenWithLevel})
         else:
-            collect.update({"odd": odd, "even": even, "in_range": inRange})
-            self._log("info", "_collect_number_by: {}".format(collect))
+            collect.update({"odd": odd, "even": even})
+        
+        self._log("info", "_collect_number_by: {}".format(collect))
         return collect
 
-    def _collect_number_type(self, skip=0, size=0, avg=True):
+    def _collect_number_hits(self, skip=0, scope=0, avg=True):
         colloct = {}; single = []; double10 = []; double20 = []; double30 = []; double40 = []; odd = []; even = []
-        while slots := self.dataSource.search(mode=NumberSearchMode.SLOTS, skip=skip, size=size):
+        while slots := self.dataSource.search(mode=NumberSearchMode.SLOTS, skip=skip, size=scope):
             for slot in slots:
                 self._log("debug", "_collect_number_type slot: {}".format(slot))
-                single.append(self.in_range_count(slot, by=1, to=9))
-                double10.append(self.in_range_count(slot, by=10, to=19))
-                double20.append(self.in_range_count(slot, by=20, to=29))
-                double30.append(self.in_range_count(slot, by=30, to=39))
-                double40.append(self.in_range_count(slot, by=40, to=49))
-                oddAndEven = self.odd_even_count(slot)
+                single.append(self._in_range_count(slot, by=1, to=9))
+                double10.append(self._in_range_count(slot, by=10, to=19))
+                double20.append(self._in_range_count(slot, by=20, to=29))
+                double30.append(self._in_range_count(slot, by=30, to=39))
+                double40.append(self._in_range_count(slot, by=40, to=49))
+                oddAndEven = self._odd_even_count(slot)
                 odd.append(oddAndEven[0])
                 even.append(oddAndEven[1])
 
-            skip = skip + size
+            skip = skip + scope
 
         colloct.update({"odd": odd, "even": even, "single": single, "double10": double10, "double20": double20, "double30": double30, "double40": double40})
         self._log("debug", "_collect_number_type: original {}".format(colloct))
