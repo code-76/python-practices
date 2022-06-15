@@ -1,5 +1,4 @@
 
-from pickle import NONE
 from data.datasources_interface import NumberDataSourcesInterface
 from data.analytics_mode import NumberSearchMode
 from utils.number import NumberHandler

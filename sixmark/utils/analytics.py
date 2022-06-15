@@ -1,25 +1,26 @@
 import numpy as np
 from data.local.local_number_datasource import LocalNumberDataSource
-from data.analytics_mode import NumberAnalytcsMode, NumberSearchMode
+from data.analytics_mode import NumberAnalyticsMode, NumberSearchMode
 from data.remote.remote_number_datasource import RemoteNumberDataSource
+from utils.debug import DebugLogger
 
 class Analytics:
     def __init__(self, dataSource):
         self.dataSource = dataSource
+        self.debugLogger = DebugLogger()
         self.dataSource.__class__ = LocalNumberDataSource if type(dataSource) is LocalNumberDataSource else RemoteNumberDataSource
-        self.logEnable = False
 
-    def log_enable(self, enable):
-        self.logEnable = enable
+    def log_level(self, level):
+        self.debugLogger.log_level(level)
 
-    def _in_range_count(self, slot, by=0, to=0):
+    def in_range_count(self, slot, by=0, to=0):
         count = 0
         for num in slot:
             if num in range(by, to):
                 count += 1
         return count
 
-    def _odd_even_count(self, slot):
+    def odd_even_count(self, slot):
         odd = 0; even = 0
         for num in slot:
             if num % 2 == 0:
@@ -29,21 +30,21 @@ class Analytics:
         return odd, even
 
     def recollect(self, **kwargs):
-        match kwargs.get("mode", NumberAnalytcsMode.TYPE):
-            case NumberAnalytcsMode.TYPE:
+        match kwargs.get("mode", NumberAnalyticsMode.TYPE):
+            case NumberAnalyticsMode.TYPE:
                 return self._collect_number_type(
                     skip=kwargs.get("skip", 0), 
                     size=kwargs.get("size", len(self.dataSource.get_slots()) - 1), 
                     avg=kwargs.get("avg", True)
                 )
-            case NumberAnalytcsMode.TRACE:
+            case NumberAnalyticsMode.TRACE:
                 return self._collect_trace(
                     by=kwargs.get("by", 0),
                     scope=kwargs.get("scope", 2),
                     skip=kwargs.get("skip", 1),
                     time=kwargs.get("time", 1)
                 )
-            case NumberAnalytcsMode.RANGE:
+            case NumberAnalyticsMode.RANGE:
                 return self._collect_number_by(
                     scope=kwargs.get("scope", 1),
                     level=kwargs.get("level", 0),
@@ -60,7 +61,7 @@ class Analytics:
                 numbers.append(i)
                 hits += 1
         collect.update({"hits": hits, "numbers": numbers})
-        # self._log("\nvalidation: {}".format(collect))
+        self._log("debug", "validation: {}".format(collect))
         return collect
 
     def _hit_number(self, fromNum, toNum):
@@ -72,12 +73,12 @@ class Analytics:
       
     def _trace_hit_one_by_one(self, slots=[]):
         result = []; slotBy = slots[0]
-        # self._log("\n_trace_hit_one_by_one by: {}".format(slotBy))
+        self._log("debug", "_trace_hit_one_by_one by: {}".format(slotBy))
         for slot in slots[1:]:
-            # self._log("\n_trace_hit_one_by_one slot: {}".format(slot))
+            self._log("debug", "_trace_hit_one_by_one slot: {}".format(slot))
             result = result + self._hit_number(slotBy, slot)
 
-        # self._log("\n_trace_hit_one_by_one: {}".format(result))
+        self._log("debug", "_trace_hit_one_by_one: {}".format(result))
         return self._distinct_count(result)
 
     def _collect_trace(self, by = 0, scope = 0, skip = 0, time=0):
@@ -89,13 +90,13 @@ class Analytics:
             if slots is None or len(slots) <= 0:
                 break
 
-            # print("\n_collect_trace slots: {}".format(slots))
+            self._log("debug", "_collect_trace slots: {}".format(slots))
             hitNumbers.append(self._trace_hit_one_by_one(slots))
-            skip = skip + scope
+            skip += 1
             time -= 1
 
-        collect.update({"hit_numbers": hitNumbers})
-        self._log("\n_collect_trace collect: {}".format(collect))
+        collect.update({"numbers": hitNumbers})
+        self._log("info", "_collect_trace collect: {}".format(collect))
         return collect
   
     def _in_range(self, slot, by, to):
@@ -114,7 +115,7 @@ class Analytics:
                 even.append(num)
         
         collect.update({"odd": odd, "even": even})
-        # self._log("\nin_number_type: {}".format(collect))
+        self._log("debug", "_in_number_type: {}".format(collect))
         return collect
 
     def _collect_number_by(self, scope=0, level=0, by=0, to=0):
@@ -123,7 +124,7 @@ class Analytics:
         if slots is None or len(slots) <= 0:
             return {}
 
-        # self._log("\n_collect_number_by slots: {}".format(slots))
+        self._log("debug", "_collect_number_by slots: {}".format(slots))
         
         for slot in slots:
             inRange = inRange + self._in_range(slot, by, to)
@@ -136,34 +137,41 @@ class Analytics:
             evenWithLevel = [x[0] for x in self._distinct_count(even) if x[1] >= level]
             inRangeWithLevel = [x[0] for x in self._distinct_count(inRange) if x[1] >= level]
             collect.update({"odd": oddWithLevel, "even": evenWithLevel, "in_range": inRangeWithLevel})
-            self._log("\n_collect_number_by with level: {}".format(collect))
+            self._log("info", "_collect_number_by with level: {}".format(collect))
         else:
             collect.update({"odd": odd, "even": even, "in_range": inRange})
-            self._log("\n_collect_number_by: {}".format(collect))
+            self._log("info", "_collect_number_by: {}".format(collect))
         return collect
 
     def _collect_number_type(self, skip=0, size=0, avg=True):
-        colloct = {}; single = []; double = []; odd = []; even = []
+        colloct = {}; single = []; double10 = []; double20 = []; double30 = []; double40 = []; odd = []; even = []
         while slots := self.dataSource.search(mode=NumberSearchMode.SLOTS, skip=skip, size=size):
             for slot in slots:
-                # self._log("\n_collect_number_type slot: {}".format(slot))
-                single.append(self._in_range_count(slot, by=1, to=9))
-                double.append(self._in_range_count(slot, by=10, to=49))
-                oddAndEven = self._odd_even_count(slot)
+                self._log("debug", "_collect_number_type slot: {}".format(slot))
+                single.append(self.in_range_count(slot, by=1, to=9))
+                double10.append(self.in_range_count(slot, by=10, to=19))
+                double20.append(self.in_range_count(slot, by=20, to=29))
+                double30.append(self.in_range_count(slot, by=30, to=39))
+                double40.append(self.in_range_count(slot, by=40, to=49))
+                oddAndEven = self.odd_even_count(slot)
                 odd.append(oddAndEven[0])
                 even.append(oddAndEven[1])
 
             skip = skip + size
 
+        colloct.update({"odd": odd, "even": even, "single": single, "double10": double10, "double20": double20, "double30": double30, "double40": double40})
+        self._log("debug", "_collect_number_type: original {}".format(colloct))
+
         odd = [] if len(odd) == 0 else round(np.average(odd)) if avg else np.max(odd) 
         even = [] if len(even) == 0 else round(np.average(even)) if avg else np.max(even)
         single = [] if len(single) == 0 else round(np.average(single)) if avg else np.max(single)
-        double = [] if len(double) == 0 else round(np.average(double)) if avg else np.max(double)
+        double10 = [] if len(double10) == 0 else round(np.average(double10)) if avg else np.max(double10)
+        double20 = [] if len(double20) == 0 else round(np.average(double20)) if avg else np.max(double20)
+        double30 = [] if len(double30) == 0 else round(np.average(double30)) if avg else np.max(double30)
+        double40 = [] if len(double40) == 0 else round(np.average(double40)) if avg else np.max(double40)
 
-        # colloct.update({"odd": odd, "even": even, "single": single, "double": double})
-        # self._log("\n_collect_number_type max: {}".format(colloct))
-        colloct.update({"odd": odd, "even": even, "single": single, "double": double})
-        self._log("\n_collect_number_type avg: {}".format(colloct))
+        colloct.update({"odd": odd, "even": even, "single": single, "double10": double10, "double20": double20, "double30": double30, "double40": double40})
+        self._log("info", "_collect_number_type avg: {}".format(colloct))
         return colloct
 
     def _distinct(self, lists1, lists2):
@@ -172,8 +180,11 @@ class Analytics:
     def _distinct_count(self, lists):
         unique, counts = np.unique(lists, return_counts=True)
         result = np.column_stack((unique, counts)).tolist()
-        # self._log("\n_distinct_count: {}".format(result))
+        self._log("debug", "_distinct_count: {}".format(result))
         return result
 
-    def _log(self, msg):
-        if self.logEnable: print(msg)
+    def log(self):
+        self.debugLogger.log()
+
+    def _log(self, level, message):
+        self.debugLogger.info(level, message)

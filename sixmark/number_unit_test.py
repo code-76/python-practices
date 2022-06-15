@@ -1,5 +1,3 @@
-
-
 import sys
 import unittest
 from testcase.test_extractor import TestNumberExtractor
