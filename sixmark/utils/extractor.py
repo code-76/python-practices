@@ -58,36 +58,45 @@ class NumberExtractor:
 
         return False
 
-    def gen(self, followList=[], divideList=[], singleTime=0, doubleTime=0, oddTime=0, evenTime=0, excludeTime=0):
-        lucky_num = []
-        while len(lucky_num) < 6:
+    def gen(self, followList=[], divideList=[], singularPoint=0, oddPoint=0, evenPoint=0, tenPoint=0, twoPoint=0, threePoint=0, fourPoint=0, excludePast=0):
+        luckyNum = []
+        while len(luckyNum) < 6:
             n = random.randint(1, 49) if len(followList) == 0 else random.choice(followList)
             self._log("debug", "gen: {}".format(n))
-            if n not in lucky_num:
+            if n not in luckyNum:
                 if self._is_divide_range(n, divideList) == False:
                     continue
 
-                lucky_num.append(n)
+                luckyNum.append(n)
 
-                if len(lucky_num) == 6:
-                    if excludeTime > 0 and self._as_same(lucky_num, excludeTime):
+                if len(luckyNum) == 6:
+                    if excludePast > 0 and self._as_same(luckyNum, excludePast):
                         # print("Reset by same number")
-                        lucky_num = []
-                    elif singleTime > 0 and self._range_count(lucky_num, by=1, to=9) < singleTime:
+                        luckyNum = []
+                    elif singularPoint > 0 and self._range_count(luckyNum, by=1, to=9) < singularPoint:
                         # print("Reset by single count")
-                        lucky_num = []
-                    elif doubleTime > 0 and self._range_count(lucky_num, by=10, to=49) < doubleTime:
+                        luckyNum = []
+                    elif tenPoint > 0 and self._range_count(luckyNum, by=10, to=19) < tenPoint:
                         # print("Reset by double count")
-                        lucky_num = []
-                    elif oddTime > 0 and self._odd_count(lucky_num) < oddTime:
+                        luckyNum = []
+                    elif twoPoint > 0 and self._range_count(luckyNum, by=20, to=29) < twoPoint:
+                        # print("Reset by double count")
+                        luckyNum = []
+                    elif threePoint > 0 and self._range_count(luckyNum, by=30, to=39) < threePoint:
+                        # print("Reset by double count")
+                        luckyNum = []
+                    elif fourPoint > 0 and self._range_count(luckyNum, by=40, to=49) < fourPoint:
+                        # print("Reset by double count")
+                        luckyNum = []
+                    elif oddPoint > 0 and self._odd_count(luckyNum) < oddPoint:
                         # print("Reset by odd count")
-                        lucky_num = []
-                    elif evenTime > 0 and self._even_count(lucky_num) < evenTime:
+                        luckyNum = []
+                    elif evenPoint > 0 and self._even_count(luckyNum) < evenPoint:
                         # print("Reset by even count")
-                        lucky_num = []
+                        luckyNum = []
                     
-        self._log("info", "gen: {}".format(lucky_num))
-        return lucky_num
+        self._log("info", "gen: {}".format(luckyNum))
+        return luckyNum
 
     def log(self):
         self.debugLogger.log()

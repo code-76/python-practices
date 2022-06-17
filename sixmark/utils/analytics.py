@@ -38,10 +38,10 @@ class Analytics:
                 )
             case NumberAnalyticsMode.TRACE:
                 return self._collect_traces(
-                    by=kwargs.get("by", 0),
                     scope=kwargs.get("scope", 2),
                     skip=kwargs.get("skip", 1),
-                    time=kwargs.get("time", 1)
+                    time=kwargs.get("time", 0),
+                    followList=kwargs.get("followList", [])
                 )
             case NumberAnalyticsMode.HIT:
                 return self._collect_number_hits(
@@ -86,17 +86,28 @@ class Analytics:
         self._log("debug", "_trace_hit_one_by_one: {}".format(result))
         return self._distinct_count(result)
 
-    def _collect_traces(self, by = 0, scope = 0, skip = 0, time=0):
+    def _trace_hit_by_list(self, slots=[], followList=[]):
+        result = [];
+        for slot in slots:
+            self._log("debug", "_trace_hit_validation slot: {}, follow: {}".format(slot, followList))
+            result = result + self._hit_number(slot, followList)
+        return self._distinct_count(result)
+
+    def _collect_traces(self, skip = 0, scope = 0, time=0, followList=[]):
         collect = {}; hitNumbers = []
-        scope = scope + 1 if by <= 0 else by
-        skip = skip - 1 if by <= 0 else by
+        scope = scope + 1 if len(followList) == 0 else scope
+        skip = skip - 1
+        time = time if time > 0 else len(self.dataSource.get_slots()) / scope
         while time > 0:
             slots = self.dataSource.search(mode=NumberSearchMode.SLOTS, skip=skip, size=scope)
             if slots is None or len(slots) <= 0:
                 break
 
             self._log("debug", "_collect_trace slots: {}".format(slots))
-            hitNumbers.append(self._trace_hit_one_by_one(slots))
+            if len(followList) > 0:
+                hitNumbers.append(self._trace_hit_by_list(slots, followList))
+            else:
+                hitNumbers.append(self._trace_hit_one_by_one(slots))
             skip += 1
             time -= 1
 
