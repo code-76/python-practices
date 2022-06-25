@@ -1,0 +1,9 @@
+# python -m venv win-venv
+# pip install -r requirements.txt
+numpy==1.23.0
+pandas==1.4.3
+jupyterlab==3.4.3
+tensorflow==2.9.1
+keras==2.9.0
+scikit-learn==1.1.1
+matplotlib==3.5.2
