@@ -1,9 +1,6 @@
-from filecmp import cmp
-from operator import mod
-from statistics import mode
 import cv2
+from matplotlib import pyplot as plt
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
 
 def create_model():
@@ -37,43 +34,24 @@ def create_model():
     val_loss, val_acc = model.evaluate(x_test, y_test)
     print(val_loss, val_acc)
 
-    model.save('model.h5')
+    model.save('simple_model.h5')
 
 def load_model():
-    model = tf.keras.models.load_model('model.h5')
+    model = tf.keras.models.load_model('simple_model.h5')
     return model
 
-def test_model_sample():
-    for i in range(1, 9):
-        model = load_model()
-        # [28, 28, 3]
-        img = cv2.imread(f'sample/{i}.png')
-        # [28, 28]
-        img = img[:,:,0]
-        img = np.invert(np.array([img]))
-        # print(img.shape)
-        prediction = model.predict(img)
-        print(f'Number is {np.argmax(prediction)}')
-        # plt.imshow(img[0])
-        # plt.show()
+def predict(number_card):
+    model = load_model()
+    # [28, 28, 3]
+    img = cv2.imread(f'sample/{number_card}')
+    # [28, 28]
+    img = img[:,:,0]
+    img = np.invert(np.array([img]))
+    # print(img.shape)
+    prediction = model.predict(img)
+    print(f'Number is {np.argmax(prediction)}')
+    plt.imshow(img[0])
+    plt.show()
 
-# def test_model():
-#     for i in range(1, 9):
-#         model = load_model()
-#         # [28, 28, 3]
-#         img = tf.keras.utils.load_img(
-#             path=f"sample/{i}.png", 
-#             target_size=(28, 28)
-#         )
-#         # [28, 28]
-#         img = img.convert('L')
-#         img = np.array(img)
-#         # [1, 28, 28]
-#         img = np.invert([img])
-#         # print(img.shape)
-#         prediction = model.predict(img)
-#         print(f'Number is {np.argmax(prediction)}')
-#         # plt.imshow(img[0])
-#         # plt.show()
-
-test_model_sample()
+# create_model()
+predict('5.png')

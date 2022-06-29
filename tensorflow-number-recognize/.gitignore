@@ -1,3 +1,4 @@
 win-venv/
 epic_num_reader.model/
-model.h5
+simple_model.h5
+cnn_model.h5
